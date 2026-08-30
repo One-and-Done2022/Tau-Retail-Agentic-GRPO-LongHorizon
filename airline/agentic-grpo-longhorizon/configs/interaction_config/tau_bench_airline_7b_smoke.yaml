@@ -1,0 +1,13 @@
+# Low-cost user simulator used only for the 4x4090 pipeline smoke test.
+interaction:
+  - name: "tau_bench_airline"
+    class_name: "src.envs.tau_bench_interaction.TauBenchInteraction"
+    config:
+      env_name: "airline"
+      user_strategy: "llm"
+      user_model: "Qwen/Qwen2.5-7B-Instruct"
+      user_provider: "openai"
+      user_base_url: "http://localhost:8001/v1"
+      task_split: "test"
+      max_turns: 6
+      reward_mode: "prm_lite"

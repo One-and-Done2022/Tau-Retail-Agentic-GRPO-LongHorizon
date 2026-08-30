@@ -1,0 +1,78 @@
+{
+  "schema_version": 1,
+  "experiment_label": "retail-fixed-budget-engineering-pilot",
+  "frozen_at": "2026-08-24T04:45:00+08:00",
+  "amendments": [
+    {
+      "amended_at": "2026-08-24T05:47:00+08:00",
+      "scope": "policy_server.max_model_len",
+      "from": 8192,
+      "to": 16384,
+      "reason": "SFT eval run_001 had zero valid trajectories because the 4343-4411 token retail prompt plus the frozen 4096 output budget exceeded 8192. No performance outcome was observed; run_001 is retained as system-error evidence and all candidates use run_002."
+    },
+    {
+      "amended_at": "2026-08-24T06:02:00+08:00",
+      "scope": "policy_server.max_model_len",
+      "from": 16384,
+      "to": 24576,
+      "reason": "Vanilla eval run_002 had one infrastructure context failure at 16401 tokens. The measured KV cache capacity is 86288 tokens, sufficient for more than three concurrent 24576-token requests; run_002 is retained and all candidates use run_003 without changing tasks, seeds, sampling, max output, or max turns."
+    }
+  ],
+  "interpretation": "Engineering pilot only; not a formal performance or generalization conclusion.",
+  "methods": {
+    "sft": {"checkpoint": "experiments/retail_sft/lora_smoke_merged", "trained_updates": 0},
+    "vanilla": {"state_progress": false, "constraint_credit": false, "hierarchical_advantage": false},
+    "state": {"state_progress": true, "constraint_credit": false, "hierarchical_advantage": true},
+    "constraint": {"state_progress": false, "constraint_credit": true, "hierarchical_advantage": true},
+    "cs": {"state_progress": true, "constraint_credit": true, "hierarchical_advantage": true}
+  },
+  "training": {
+    "config": "configs/train/grpo/retail_ablation_4090_pilot.yaml",
+    "initial_checkpoint": "experiments/retail_sft/lora_smoke_merged",
+    "train_parquet": "experiments/retail_vanilla_grpo/smoke_001/train.parquet",
+    "train_parquet_sha256": "527f854823775d9dcabe3a8478dedb170c0afc2f6ca15ee7c9e1f64b3aae4413",
+    "task_split": "train",
+    "task_id_order": [1, 0],
+    "updates": 3,
+    "checkpoint_selection": "global_step_3_only",
+    "group_size": 4,
+    "temperature": 1.0,
+    "top_p": 0.9,
+    "max_prompt_tokens": 4096,
+    "max_response_tokens": 4096,
+    "max_environment_turns": 12,
+    "visible_actor_gpus": 2,
+    "user_simulator": {
+      "checkpoint": "/home/liuchenyang/agentic-grpo-retail/models/Qwen2.5-7B-Instruct",
+      "served_model_name": "Qwen/Qwen2.5-7B-Instruct",
+      "base_url": "http://localhost:8001/v1",
+      "physical_gpu": 6
+    },
+    "method_credit": {
+      "beta": 0.5,
+      "state": {"progress_weight": 1.0, "constraint_weight": 0.0, "error_penalty": 0.0, "redundant_write_penalty": 0.0},
+      "constraint": {"progress_weight": 0.0, "constraint_weight": 0.1, "error_penalty": 0.1, "redundant_write_penalty": 0.1},
+      "cs": {"progress_weight": 1.0, "constraint_weight": 0.1, "error_penalty": 0.1, "redundant_write_penalty": 0.1}
+    }
+  },
+  "evaluation": {
+    "seen_config": "configs/eval/retail/ablation_seen.yaml",
+    "unseen_config": "configs/eval/retail/ablation_unseen.yaml",
+    "seen": {"task_split": "train", "task_ids": [0, 1]},
+    "unseen": {"task_split": "test", "task_ids": [0, 1, 2, 3]},
+    "samples_per_task": 2,
+    "max_turns": 20,
+    "temperature": 0.7,
+    "top_p": 0.9,
+    "max_tokens": 4096,
+    "seed_rule": "20260824 + task_id * 1000 + sample_id",
+    "policy_server": {"base_url": "http://localhost:8012/v1", "physical_gpu": 1, "max_model_len": 24576},
+    "user_simulator": {"base_url": "http://localhost:8001/v1", "physical_gpu": 6},
+    "metrics": [
+      "pass_at_1", "pass_hat_1", "constraint_violation_rate",
+      "high_risk_tool_error_rate", "tool_error_rate", "error_recovery_rate",
+      "error_rate", "avg_turns", "avg_tool_calls", "avg_reasoning_tokens_per_turn",
+      "max_reasoning_tokens_single_turn", "avg_latency_seconds"
+    ]
+  }
+}

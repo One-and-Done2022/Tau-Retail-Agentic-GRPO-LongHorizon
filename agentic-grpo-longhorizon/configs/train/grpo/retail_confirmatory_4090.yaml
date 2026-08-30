@@ -1,0 +1,111 @@
+# Confirmatory eight-task retail ablation on 2x RTX 4090.
+# Method-specific interaction/advantage settings are supplied by the runner.
+hydra:
+  searchpath:
+    - pkg://verl/trainer/config
+
+defaults:
+  - ppo_trainer
+  - _self_
+
+data:
+  train_files: experiments/retail_confirmatory/data/train.parquet
+  val_files: experiments/retail_confirmatory/data/val.parquet
+  train_batch_size: 1
+  max_prompt_length: 6144
+  max_response_length: 4096
+  shuffle: false
+  seed: 20260825
+  return_raw_chat: true
+  tool_config_path: configs/tool_config/tau_bench_retail_tools.yaml
+
+actor_rollout_ref:
+  model:
+    path: experiments/retail_sft/lora_smoke_merged
+    enable_gradient_checkpointing: true
+    lora_rank: 16
+    lora_alpha: 32
+    use_fused_kernels: false
+    override_config:
+      attn_implementation: sdpa
+  actor:
+    use_torch_compile: false
+    fsdp_config:
+      optimizer_offload: true
+      param_offload: true
+      model_dtype: bf16
+    optim:
+      lr: 5.0e-6
+    use_kl_loss: true
+    kl_loss_coef: 0.01
+    kl_loss_type: low_var_kl
+    use_fused_kernels: false
+    ppo_mini_batch_size: 1
+    ppo_micro_batch_size_per_gpu: 1
+  rollout:
+    name: vllm
+    mode: async
+    load_format: safetensors
+    layered_summon: true
+    enforce_eager: true
+    agent:
+      default_agent_loop: tool_agent
+      num_workers: 4
+    multi_turn:
+      enable: true
+      format: hermes
+      max_user_turns: 10
+      max_assistant_turns: 10
+      max_tool_response_length: 2048
+      tool_config_path: configs/tool_config/tau_bench_retail_tools.yaml
+      interaction_config_path: configs/interaction_config/tau_bench_retail_confirmatory.yaml
+    n: 4
+    temperature: 1.0
+    top_p: 0.9
+    tensor_model_parallel_size: 2
+    calculate_log_probs: true
+    gpu_memory_utilization: 0.45
+    free_cache_engine: true
+    max_num_seqs: 4
+    max_model_len: 12288
+    max_num_batched_tokens: 12288
+    log_prob_micro_batch_size_per_gpu: 1
+    val_kwargs:
+      n: 1
+      temperature: 0.7
+      top_p: 0.9
+  ref:
+    fsdp_config:
+      optimizer_offload: true
+      param_offload: true
+      model_dtype: bf16
+    model:
+      path: experiments/retail_sft/lora_smoke_merged
+      override_config:
+        attn_implementation: sdpa
+    log_prob_micro_batch_size_per_gpu: 1
+
+algorithm:
+  adv_estimator: grpo
+  norm_adv_by_std_in_grpo: true
+  cs_grpo:
+    beta: 0.0
+  kl_ctrl:
+    kl_coef: 0.01
+  rollout_correction:
+    bypass_mode: true
+
+trainer:
+  total_epochs: 1
+  total_training_steps: 8
+  val_before_train: false
+  save_freq: 4
+  test_freq: -1
+  resume_mode: disable
+  default_local_dir: experiments/retail_confirmatory/train/_template/checkpoints
+  rollout_data_dir: experiments/retail_confirmatory/train/_template/rollouts
+  logger: [console]
+  project_name: agentic-grpo-retail
+  experiment_name: retail_confirmatory_template
+  n_gpus_per_node: 2
+  nnodes: 1

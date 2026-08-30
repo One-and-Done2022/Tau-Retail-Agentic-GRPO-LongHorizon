@@ -1,0 +1,24 @@
+# Retail SFT teacher collection. `--tiny` reduces this to two train tasks x two samples.
+env:
+  name: retail
+  user_strategy: llm
+  user_model: "Qwen/Qwen2.5-7B-Instruct"
+  user_provider: openai
+  user_base_url: "http://localhost:8011/v1"
+  task_split: train
+
+policy:
+  model_name: "Qwen/Qwen2.5-72B-Instruct-AWQ"
+  base_url: "http://localhost:8010/v1"
+  top_p: 0.9
+  max_tokens: 512
+
+collect:
+  best_of_n: 4
+  temperatures: [0.0, 0.3, 0.7, 1.0]
+  max_turns: 20
+  num_workers: 2
+  holdout_size: 100
+
+output:
+  dir: "experiments/retail_sft/collect_8k"

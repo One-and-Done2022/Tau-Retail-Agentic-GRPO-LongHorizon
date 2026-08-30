@@ -1,0 +1,26 @@
+env:
+  name: retail
+  user_strategy: llm
+  user_model: "Qwen/Qwen2.5-7B-Instruct"
+  user_provider: openai
+  user_base_url: "http://localhost:8001/v1"
+  task_split: test
+
+policy:
+  model_name: "Qwen/Qwen2.5-7B-Instruct"
+  base_url: "http://localhost:8012/v1"
+  temperature: 0.7
+  top_p: 0.9
+  max_tokens: 4096
+  tokenizer_name_or_path: "experiments/retail_sft/lora_smoke_merged"
+
+eval:
+  task_ids: [0, 1, 2, 3]
+  num_tasks: 4
+  num_samples_per_task: 2
+  max_turns: 20
+  num_workers: 2
+  seed: 20260824
+
+output:
+  dir: "experiments/retail_ablation_eval/_template/unseen"

@@ -1,0 +1,25 @@
+# Independent tau-bench smoke evaluation with a 7B user simulator.
+env:
+  name: airline
+  user_strategy: llm
+  user_model: "Qwen/Qwen2.5-7B-Instruct"
+  user_provider: openai
+  user_base_url: "http://localhost:8001/v1"
+  task_split: test
+
+policy:
+  model_name: "Qwen/Qwen2.5-7B-Instruct"
+  tokenizer_name_or_path: "experiments/4090_smoke/hf_step_1"
+  base_url: "http://localhost:8000/v1"
+  temperature: 0.7
+  top_p: 0.9
+  max_tokens: 512
+
+eval:
+  num_tasks: 1
+  num_samples_per_task: 1
+  max_turns: 6
+  num_workers: 1
+
+output:
+  dir: "experiments/4090_smoke/eval"

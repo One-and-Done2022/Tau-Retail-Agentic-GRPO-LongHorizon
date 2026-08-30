@@ -1,0 +1,19 @@
+interaction:
+  - name: "tau_bench_retail"
+    class_name: "src.envs.tau_bench_interaction.TauBenchInteraction"
+    config:
+      env_name: "retail"
+      user_strategy: "llm"
+      user_model: "Qwen/Qwen2.5-7B-Instruct"
+      user_provider: "openai"
+      user_base_url: "http://localhost:8001/v1"
+      user_seed: 30260825
+      task_split: "train"
+      max_turns: 12
+      reward_mode: "binary"
+      step_credit:
+        enabled: true
+        progress_weight: 0.0
+        constraint_weight: 0.1
+        error_penalty: 0.1
+        redundant_write_penalty: 0.1
